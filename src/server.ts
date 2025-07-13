@@ -1,11 +1,11 @@
-import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes';
-import scheduleRoutes from './routes/scheduleRoutes';
+import express from 'express';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import bookingRoutes from './routes/bookingRoutes';
 import notificationRoutes from './routes/notificationRoutes';
-import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
+import scheduleRoutes from './routes/scheduleRoutes';
+import userRoutes from './routes/userRoutes';
 import { ApiResponseHandler } from './utils/apiResponse';
 
 // Load environment variables
@@ -30,7 +30,7 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// Error handling middleware (debe ir después de las rutas)
+// Error handling middleware
 app.use(notFoundHandler);
 app.use(errorHandler);
 

@@ -1,9 +1,10 @@
 import prisma from '../config/database';
-import { Notification } from '../interfaces';
+import { NotificationResponseDto } from '../dtos';
+import { transformNotificationToResponse } from '../utils/apiResponse';
 
 export class NotificationService {
-  async getNotifications(userId: number): Promise<Notification[]> {
-    return await prisma.notification.findMany({
+  async getNotifications(userId: number): Promise<NotificationResponseDto[]> {
+    const notifications = await prisma.notification.findMany({
       where: {
         userId,
       },
@@ -14,9 +15,11 @@ export class NotificationService {
         id: 'desc',
       },
     });
+
+    return notifications.map(notification => transformNotificationToResponse(notification));
   }
 
-  async markAsRead(notificationId: number, userId: number): Promise<Notification> {
+  async markAsRead(notificationId: number, userId: number): Promise<NotificationResponseDto> {
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -29,7 +32,7 @@ export class NotificationService {
       throw new Error('Unauthorized to update this notification');
     }
 
-    return await prisma.notification.update({
+    const updatedNotification = await prisma.notification.update({
       where: { id: notificationId },
       data: {
         read: true,
@@ -38,6 +41,8 @@ export class NotificationService {
         user: true,
       },
     });
+
+    return transformNotificationToResponse(updatedNotification);
   }
 
   async getUnreadCount(userId: number): Promise<number> {

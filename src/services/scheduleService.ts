@@ -1,9 +1,9 @@
 import prisma from '../config/database';
-import { AvailableSlot } from '../interfaces';
-import { CreateScheduleDto } from '../dtos';
+import { ScheduleResponseDto, CreateScheduleDto } from '../dtos';
+import { transformScheduleToResponse } from '../utils/apiResponse';
 
 export class ScheduleService {
-  async createSchedule(userId: number, scheduleData: CreateScheduleDto): Promise<AvailableSlot> {
+  async createSchedule(userId: number, scheduleData: CreateScheduleDto): Promise<ScheduleResponseDto> {
     const { date, startTime, endTime } = scheduleData;
 
     // Validate that the professional exists
@@ -45,7 +45,7 @@ export class ScheduleService {
       throw new Error('Schedule overlaps with existing time slot');
     }
 
-    return await prisma.availableSlot.create({
+    const schedule = await prisma.availableSlot.create({
       data: {
         userId,
         date: new Date(date),
@@ -56,9 +56,11 @@ export class ScheduleService {
         user: true,
       },
     });
+
+    return transformScheduleToResponse(schedule);
   }
 
-  async createSchedules(userId: number, schedulesData: CreateScheduleDto[]): Promise<AvailableSlot[]> {
+  async createSchedules(userId: number, schedulesData: CreateScheduleDto[]): Promise<ScheduleResponseDto[]> {
     // Validate that the professional exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -73,7 +75,7 @@ export class ScheduleService {
     }
 
     // Validate each schedule and check for overlaps
-    const createdSchedules: AvailableSlot[] = [];
+    const createdSchedules: ScheduleResponseDto[] = [];
     const errors: string[] = [];
 
     for (let i = 0; i < schedulesData.length; i++) {
@@ -142,7 +144,7 @@ export class ScheduleService {
           },
         });
 
-        createdSchedules.push(schedule);
+        createdSchedules.push(transformScheduleToResponse(schedule));
       } catch (error: any) {
         errors.push(`Schedule ${i + 1}: ${error.message}`);
       }

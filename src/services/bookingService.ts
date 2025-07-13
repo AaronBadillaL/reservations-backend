@@ -1,6 +1,7 @@
 import prisma from '../config/database';
-import { CreateBookingDto, UpdateBookingStatusDto } from '../dtos';
+import { CreateBookingDto, UpdateBookingStatusDto, BookingResponseDto } from '../dtos';
 import { EmailService } from '../utils/emailService';
+import { transformBookingToResponse } from '../utils/apiResponse';
 
 export class BookingService {
   private emailService: EmailService;
@@ -9,7 +10,7 @@ export class BookingService {
     this.emailService = new EmailService();
   }
 
-  async createBooking(clientId: number, bookingData: CreateBookingDto): Promise<any> {
+  async createBooking(clientId: number, bookingData: CreateBookingDto): Promise<BookingResponseDto> {
     const { professionalId, date, startTime, endTime } = bookingData;
     // Check if professional exists and is a professional
     const professional = await prisma.user.findUnique({
@@ -81,15 +82,15 @@ export class BookingService {
       booking,
     );
 
-    return booking;
+    return transformBookingToResponse(booking);
   }
 
-  async getMyBookings(userId: number, role: string): Promise<any[]> {
+  async getMyBookings(userId: number, role: string): Promise<BookingResponseDto[]> {
     const whereClause = role === 'CLIENT'
       ? { clientId: userId }
       : { professionalId: userId };
 
-    return await prisma.booking.findMany({
+    const bookings = await prisma.booking.findMany({
       where: whereClause,
       include: {
         client: true,
@@ -99,13 +100,15 @@ export class BookingService {
         date: 'desc',
       },
     });
+
+    return bookings.map(booking => transformBookingToResponse(booking));
   }
 
   async updateBookingStatus(
     bookingId: number,
     userId: number,
     statusData: UpdateBookingStatusDto,
-  ): Promise<any> {
+  ): Promise<BookingResponseDto> {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -186,6 +189,6 @@ export class BookingService {
       }
     }
 
-    return updatedBooking;
+    return transformBookingToResponse(updatedBooking);
   }
 }

@@ -1,8 +1,8 @@
-import prisma from '../config/database';
 import bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { User } from '../interfaces';
+import prisma from '../config/database';
 import { CreateUserDto, LoginDto, UpdateUserDto } from '../dtos';
+import { User } from '../interfaces';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -74,9 +74,6 @@ export class UserService {
 
     if (userData.name) updateData.name = userData.name;
     if (userData.email) updateData.email = userData.email;
-    if (userData.password) {
-      updateData.password = await bcrypt.hash(userData.password, 10);
-    }
 
     return await prisma.user.update({
       where: { id },

@@ -6,6 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:debug": "nodemon --exec \"node --inspect -r ts-node/register src/server.ts\"",
+    "dev:debug:brk": "nodemon --exec \"node --inspect-brk -r ts-node/register src/server.ts\"",
+    "dev:debug:9229": "nodemon --exec \"node --inspect=0.0.0.0:9229 -r ts-node/register src/server.ts\"",
     "dev:prod": "NODE_ENV=production ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "build:clean": "rimraf dist && tsc",

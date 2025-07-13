@@ -2,16 +2,9 @@ import { Response } from 'express';
 import { UserService } from '../services/userService';
 import { CreateUserDto, LoginDto, UpdateUserDto } from '../dtos';
 import { AuthRequest } from '../interfaces';
-import { ApiResponseHandler } from '../utils/apiResponse';
+import { ApiResponseHandler, transformUserToResponse } from '../utils/apiResponse';
 
 const userService = new UserService();
-
-// Helper function to omit password from user object
-const omitPassword = (user: any) => {
-  const userCopy = { ...user };
-  delete userCopy.password;
-  return userCopy;
-};
 
 export class UserController {
   async createUser(req: AuthRequest, res: Response): Promise<void> {
@@ -20,7 +13,7 @@ export class UserController {
       const user = await userService.createUser(userData);
 
       // Don't send password in response
-      const userWithoutPassword = omitPassword(user);
+      const userWithoutPassword = transformUserToResponse(user);
 
       ApiResponseHandler.created(res, 'User created successfully', { user: userWithoutPassword });
     } catch (error: any) {
@@ -34,7 +27,7 @@ export class UserController {
       const { user, token } = await userService.login(loginData);
 
       // Don't send password in response
-      const userWithoutPassword = omitPassword(user);
+      const userWithoutPassword = transformUserToResponse(user);
       ApiResponseHandler.success(res, 'Login successful', { user: userWithoutPassword, token });
     } catch (error: any) {
       ApiResponseHandler.unauthorized(res, error.message);
@@ -58,7 +51,7 @@ export class UserController {
       }
 
       // Don't send password in response
-      const userWithoutPassword = omitPassword(user);
+      const userWithoutPassword = transformUserToResponse(user);
 
       ApiResponseHandler.success(res, 'Profile fetched successfully', { user: userWithoutPassword });
     } catch (error: any) {
@@ -85,7 +78,7 @@ export class UserController {
       const user = await userService.updateUser(userId, userData);
 
       // Don't send password in response
-      const userWithoutPassword = omitPassword(user);
+      const userWithoutPassword = transformUserToResponse(user);
 
       ApiResponseHandler.success(res, 'User updated successfully', { user: userWithoutPassword });
     } catch (error: any) {

@@ -1,105 +1,131 @@
 import { Response } from 'express';
-
-export interface ApiResponse<T = any> {
-  status: 'success' | 'error';
-  message: string;
-  data?: T;
-}
+import { BookingResponseDto, NotificationResponseDto, ScheduleResponseDto, UserResponseDto } from '../dtos';
+import { User } from '../interfaces/user';
 
 export class ApiResponseHandler {
-  /**
-   * Envía una respuesta exitosa
-   */
-  static success<T>(
-    res: Response,
-    message: string,
-    data?: T,
-    statusCode: number = 200,
-  ): void {
-    const response: ApiResponse<T> = {
-      status: 'success',
+  static success(res: Response, message: string, data?: any, statusCode: number = 200): void {
+    res.status(statusCode).json({
+      success: true,
       message,
       data,
-    };
-
-    res.status(statusCode).json(response);
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  /**
-   * Envía una respuesta de error
-   */
-  static error(
-    res: Response,
-    message: string,
-    statusCode: number = 500,
-  ): void {
-    const response: ApiResponse = {
-      status: 'error',
+  static created(res: Response, message: string, data?: any): void {
+    this.success(res, message, data, 201);
+  }
+
+  static badRequest(res: Response, message: string = 'Bad Request'): void {
+    res.status(400).json({
+      success: false,
       message,
-    };
-
-    res.status(statusCode).json(response);
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  /**
-   * Envía una respuesta exitosa con datos de creación
-   */
-  static created<T>(
-    res: Response,
-    message: string,
-    data?: T,
-  ): void {
-    ApiResponseHandler.success(res, message, data, 201);
+  static unauthorized(res: Response, message: string = 'Unauthorized'): void {
+    res.status(401).json({
+      success: false,
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  /**
-   * Envía una respuesta de error de validación
-   */
-  static validationError(
-    res: Response,
-    message: string = 'Validation failed',
-  ): void {
-    ApiResponseHandler.error(res, message, 400);
+  static forbidden(res: Response, message: string = 'Forbidden'): void {
+    res.status(403).json({
+      success: false,
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  /**
-   * Envía una respuesta de error de autenticación
-   */
-  static unauthorized(
-    res: Response,
-    message: string = 'Authentication required',
-  ): void {
-    ApiResponseHandler.error(res, message, 401);
+  static notFound(res: Response, message: string = 'Not Found'): void {
+    res.status(404).json({
+      success: false,
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  /**
-   * Envía una respuesta de error de autorización
-   */
-  static forbidden(
-    res: Response,
-    message: string = 'Insufficient permissions',
-  ): void {
-    ApiResponseHandler.error(res, message, 403);
+  static validationError(res: Response, message: string = 'Validation Error'): void {
+    res.status(422).json({
+      success: false,
+      message,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  /**
-   * Envía una respuesta de error de recurso no encontrado
-   */
-  static notFound(
-    res: Response,
-    message: string = 'Resource not found',
-  ): void {
-    ApiResponseHandler.error(res, message, 404);
+  static internalError(res: Response, message: string = 'Internal Server Error'): void {
+    res.status(500).json({
+      success: false,
+      message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+// Utility functions to transform data
+export function transformUserToResponse(user: User): UserResponseDto {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+export function transformBookingToResponse(booking: any): BookingResponseDto {
+  const transformedBooking: BookingResponseDto = {
+    id: booking.id,
+    clientId: booking.clientId,
+    professionalId: booking.professionalId,
+    date: booking.date,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    status: booking.status,
+  };
+
+  if (booking.client) {
+    transformedBooking.client = transformUserToResponse(booking.client);
   }
 
-  /**
-   * Envía una respuesta de error interno del servidor
-   */
-  static internalError(
-    res: Response,
-    message: string = 'Internal server error',
-  ): void {
-    ApiResponseHandler.error(res, message, 500);
+  if (booking.professional) {
+    transformedBooking.professional = transformUserToResponse(booking.professional);
   }
 
+  return transformedBooking;
+}
+
+export function transformNotificationToResponse(notification: any): NotificationResponseDto {
+  const transformedNotification: NotificationResponseDto = {
+    id: notification.id,
+    userId: notification.userId,
+    message: notification.message,
+    read: notification.read,
+  };
+
+  if (notification.user) {
+    transformedNotification.user = transformUserToResponse(notification.user);
+  }
+
+  return transformedNotification;
+}
+
+export function transformScheduleToResponse(schedule: any): ScheduleResponseDto {
+  const transformedSchedule: ScheduleResponseDto = {
+    id: schedule.id,
+    userId: schedule.userId,
+    date: schedule.date,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+  };
+
+  if (schedule.user) {
+    transformedSchedule.user = transformUserToResponse(schedule.user);
+  }
+
+  return transformedSchedule;
 }
