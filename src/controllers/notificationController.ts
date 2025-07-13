@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { NotificationService } from '../services/notificationService';
 import { AuthRequest } from '../interfaces';
+import { ApiResponseHandler } from '../utils/apiResponse';
 
 const notificationService = new NotificationService();
 
@@ -8,49 +9,46 @@ export class NotificationController {
   async getNotifications(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
-        res.status(401).json({ error: 'Authentication required' });
+        ApiResponseHandler.unauthorized(res);
         return;
       }
 
       const notifications = await notificationService.getNotifications(req.user.id);
 
-      res.json({ notifications });
+      ApiResponseHandler.success(res, 'Notifications fetched successfully', { notifications });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      ApiResponseHandler.internalError(res, error.message);
     }
   }
 
   async markAsRead(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
-        res.status(401).json({ error: 'Authentication required' });
+        ApiResponseHandler.unauthorized(res);
         return;
       }
 
       const notificationId = parseInt(req.params.id);
       const notification = await notificationService.markAsRead(notificationId, req.user.id);
 
-      res.json({
-        message: 'Notification marked as read',
-        notification,
-      });
+      ApiResponseHandler.success(res, 'Notification marked as read successfully', { notification });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      ApiResponseHandler.validationError(res, error.message);
     }
   }
 
   async getUnreadCount(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
-        res.status(401).json({ error: 'Authentication required' });
+        ApiResponseHandler.unauthorized(res);
         return;
       }
 
       const count = await notificationService.getUnreadCount(req.user.id);
 
-      res.json({ unreadCount: count });
+      ApiResponseHandler.success(res, 'Unread count fetched successfully', { unreadCount: count });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      ApiResponseHandler.internalError(res, error.message);
     }
   }
 }

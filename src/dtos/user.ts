@@ -13,5 +13,4 @@ export interface LoginDto {
 export interface UpdateUserDto {
   name?: string;
   email?: string;
-  password?: string;
 }

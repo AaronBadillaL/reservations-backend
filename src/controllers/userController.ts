@@ -2,8 +2,16 @@ import { Response } from 'express';
 import { UserService } from '../services/userService';
 import { CreateUserDto, LoginDto, UpdateUserDto } from '../dtos';
 import { AuthRequest } from '../interfaces';
+import { ApiResponseHandler } from '../utils/apiResponse';
 
 const userService = new UserService();
+
+// Helper function to omit password from user object
+const omitPassword = (user: any) => {
+  const userCopy = { ...user };
+  delete userCopy.password;
+  return userCopy;
+};
 
 export class UserController {
   async createUser(req: AuthRequest, res: Response): Promise<void> {
@@ -12,14 +20,11 @@ export class UserController {
       const user = await userService.createUser(userData);
 
       // Don't send password in response
-      const { password, ...userWithoutPassword } = user;
+      const userWithoutPassword = omitPassword(user);
 
-      res.status(201).json({
-        message: 'User created successfully',
-        user: userWithoutPassword,
-      });
+      ApiResponseHandler.created(res, 'User created successfully', { user: userWithoutPassword });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      ApiResponseHandler.validationError(res, error.message);
     }
   }
 
@@ -29,66 +34,62 @@ export class UserController {
       const { user, token } = await userService.login(loginData);
 
       // Don't send password in response
-      const { password, ...userWithoutPassword } = user;
-
-      res.json({
-        message: 'Login successful',
-        user: userWithoutPassword,
-        token,
-      });
+      const userWithoutPassword = omitPassword(user);
+      ApiResponseHandler.success(res, 'Login successful', { user: userWithoutPassword, token });
     } catch (error: any) {
-      res.status(401).json({ error: error.message });
+      ApiResponseHandler.unauthorized(res, error.message);
     }
   }
 
   async getProfile(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.user?.id;
 
-      // Users can only access their own profile
-      if (req.user?.id !== userId) {
-        res.status(403).json({ error: 'Unauthorized' });
+      if (!userId) {
+        ApiResponseHandler.unauthorized(res, 'User not authenticated');
         return;
       }
 
       const user = await userService.getUserById(userId);
 
       if (!user) {
-        res.status(404).json({ error: 'User not found' });
+        ApiResponseHandler.notFound(res, 'User not found');
         return;
       }
 
       // Don't send password in response
-      const { password, ...userWithoutPassword } = user;
+      const userWithoutPassword = omitPassword(user);
 
-      res.json({ user: userWithoutPassword });
+      ApiResponseHandler.success(res, 'Profile fetched successfully', { user: userWithoutPassword });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      ApiResponseHandler.internalError(res, error.message);
     }
   }
 
   async updateUser(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.user?.id;
       const userData: UpdateUserDto = req.body;
 
-      // Users can only update their own profile
-      if (req.user?.id !== userId) {
-        res.status(403).json({ error: 'Unauthorized' });
+      if (!userId) {
+        ApiResponseHandler.unauthorized(res, 'User not authenticated');
         return;
       }
-      //TODO: Check if the user is updating their own profile and is updated successfully
+
+      // Validate that password is not being updated
+      if ('password' in req.body) {
+        ApiResponseHandler.validationError(res, 'Password cannot be updated through this endpoint. Use a dedicated password change endpoint.');
+        return;
+      }
+
       const user = await userService.updateUser(userId, userData);
 
       // Don't send password in response
-      const { password, ...userWithoutPassword } = user;
+      const userWithoutPassword = omitPassword(user);
 
-      res.json({
-        message: 'User updated successfully',
-        user: userWithoutPassword,
-      });
+      ApiResponseHandler.success(res, 'User updated successfully', { user: userWithoutPassword });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      ApiResponseHandler.validationError(res, error.message);
     }
   }
 }

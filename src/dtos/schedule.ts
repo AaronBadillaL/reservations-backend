@@ -3,3 +3,7 @@ export interface CreateScheduleDto {
   startTime: string;
   endTime: string;
 }
+
+export interface CreateSchedulesDto {
+  schedules: CreateScheduleDto[];
+}

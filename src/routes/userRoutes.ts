@@ -10,7 +10,7 @@ router.post('/', userController.createUser.bind(userController));
 router.post('/login', userController.login.bind(userController));
 
 // Protected routes
-router.get('/:id', authMiddleware, userController.getProfile.bind(userController));
-router.put('/:id', authMiddleware, userController.updateUser.bind(userController));
+router.get('/me', authMiddleware, userController.getProfile.bind(userController));
+router.put('/me', authMiddleware, userController.updateUser.bind(userController));
 
 export default router;
